@@ -1,0 +1,350 @@
+<?php
+/*
+ * Copyright (c) 2010 Jan Smitka <jan@smitka.org>
+ *
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ *
+ */
+
+
+
+/**
+ * Template for TranslationPanel
+ *
+ * @author Jan Smitka <jan@smitka.org>
+ */
+
+/* @var $this TranslationPanel */
+/* @var $translator IEditableTranslator */
+?>
+
+<style>
+#TranslationPanel {
+	min-width: 600px;
+}
+
+#TranslationPanel .nette-inner {
+	max-width: 800px !important;
+}
+
+#TranslationPanel-strings {
+	width: 30%;
+	height: 300px;
+	overflow: auto;
+	float: left;
+	border: 1px solid #AAA;
+}
+
+#TranslationPanel div.TranslationPanel-string {
+	border-bottom: 1px solid #DDD;
+	padding: 0.3ex 1ex;
+	background-color: #E6EFC2;
+}
+
+#TranslationPanel div.TranslationPanel-string.untranslated {
+	background-color: #FFF6BF;
+}
+
+#TranslationPanel div.TranslationPanel-string a {
+	color: #264409;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+#TranslationPanel div.TranslationPanel-string a:hover {
+	background: none;
+}
+
+#TranslationPanel div.TranslationPanel-string.untranslated a {
+	color: #514721;
+}
+
+#TranslationPanel div.TranslationPanel-string.modified {
+	background-image: url("<?php echo $this->getIconSrc('bullet_star.png'); ?>");
+	background-position: 99% 50%;
+	background-repeat: no-repeat;
+}
+
+#TranslationPanel-editor {
+	width: 65%;
+	float: left;
+	margin-left: 1ex;
+}
+
+#TranslationPanel div.TranslationPanel-stringVariant {
+	width: 50%;
+	height: 45%;
+	float: left;
+}
+
+#TranslationPanel div.TranslationPanel-stringVariant sup {
+	font-size: 60%;
+}
+
+#TranslationPanel label {
+	display: block;
+	font-weight: bold;
+}
+
+#TranslationPanel textarea {
+	width: 95%;
+	height: 70%;
+	background-color: #fff;
+	border: 1px solid #bbb;
+	margin: 0.5em 0;
+	border: 1px solid #888;
+}
+
+#TranslationPanel-tools {
+	clear: both;
+	background-color: #EDEAE0;
+	padding: 1ex;
+	text-align: right;
+	border-radius: 0.7ex;
+	-moz-border-radius: 0.7ex;
+	-webkit-border-radius: 0.7ex;
+}
+
+#TranslationPanel-tools input.save {
+	padding: 3px 3px 3px 22px;
+	background: #DFDDD8 url("<?php echo $this->getIconSrc('tick.png'); ?>") scroll no-repeat 3px 50%;
+	border: 1px solid #CCC;
+	border-radius: 0.7ex;
+	-moz-border-radius: 0.7ex;
+	-webkit-border-radius: 0.7ex;
+}
+
+#TranslationPanel-tools input.save:hover, #TranslationPanel-tools input.save:focus {
+	border-color: #AAA;
+}
+
+#TranslationPanel-tools input.save.disabled {
+	background-color: transparent;
+	background-image: url("<?php echo $this->getIconSrc('tick_gray.png'); ?>");
+	border: 1px solid #DDD;
+}
+
+#TranslationPanel-status {
+	float: left;
+	display: block;
+	padding: 4px 0;
+}
+</style>
+
+<script type="text/javascript">
+/* <![CDATA[ */
+var JSON = JSON || {};
+
+JSON.stringify = JSON.stringify || function (obj) {
+	var t = typeof (obj);
+	if (t != "object" || obj === null) {
+		// simple data type
+		if (t == "string") obj = '"'+obj+'"';
+		return String(obj);
+    } else {
+        var n, v, json = [], arr = (obj && obj.constructor == Array);
+		for (n in obj) {
+			v = obj[n]; t = typeof(v);
+			if (t == "string") v = '"'+v+'"';
+			else if (t == "object" && v !== null) v = JSON.stringify(v);
+			json.push((arr ? "" : '"' + n + '":') + String(v));
+		}
+
+		return (arr ? "[" : "{") + String(json) + (arr ? "]" : "}");
+   }
+};
+/* ]]> */
+</script>
+
+<script type="text/javascript">
+/* <![CDATA[ */
+
+var translationPanel = {
+	strings: <?php echo json_encode($translator->getStrings()); ?>,
+	variants: <?php echo json_encode($translator->getVariantsCount()); ?>,
+
+	updatedStrings: [],
+	currentString: false,
+
+	listElements: [],
+
+	init: function() {
+		this.drawList();
+
+		for (var i = 0; i < this.variants; i++) {
+			var textarea = document.getElementById('TranslationPanel-stringVariant_' + i);
+			textarea.onchange = function () {
+				translationPanel.save();
+			};
+		}
+
+		var button = document.getElementById('TranslationPanel-save');
+		button.disabled = true;
+		button.className += ' disabled';
+		button.onclick = function () {
+			button.disabled = true;
+			button.className += ' disabled';
+
+			translationPanel.commit();
+		};
+
+		translationPanel.setStatus();
+	},
+
+	drawList: function () {
+		var list = document.getElementById('TranslationPanel-strings');
+		list.innerHTML = '';
+		this.listElements = [];
+
+		for (var i in this.strings) {
+			var div = document.createElement('div');
+			div.className = 'TranslationPanel-string';
+			if (!this.strings[i])
+				div.className += ' untranslated';
+
+			var a = document.createElement('a');
+			a.appendChild(document.createTextNode(i));
+			a.onclick = function () {
+				translationPanel.edit(this);
+			};
+
+			div.appendChild(a);
+			list.appendChild(div);
+
+			this.listElements[i] = div;
+		}
+	},
+
+	edit: function (anchor) {
+		var string = anchor.textContent || anchor.innerText;
+
+		this.fillIn(this.strings[string]);
+		this.currentString = string;
+		document.getElementById('TranslationPanel-stringVariant_0').focus();
+		this.setStatus(string.length <= 40 ? string : string.substr(0, 40) + '&hellip;');
+	},
+
+	fillIn: function (stringData) {
+		if (typeof(stringData) != 'object' || !(stringData instanceof Array))
+			stringData = [stringData];
+
+		for (var i = 0; i < this.variants; i++) {
+			var textarea = document.getElementById('TranslationPanel-stringVariant_' + i);
+			if (stringData[i])
+				textarea.value = stringData[i];
+			else
+				textarea.value = '';
+		}
+	},
+
+	save: function () {
+		if (this.currentString) {
+			var stringData = [];
+			for (var i = 0; i < this.variants; i++) {
+				var textarea = document.getElementById('TranslationPanel-stringVariant_' + i);
+				if (textarea.value)
+					stringData[i] = textarea.value;
+			}
+
+			if (stringData.length == 1)
+				stringData = stringData.shift();
+			else if (stringData.length == 0)
+				stringData = false;
+
+			this.strings[this.currentString] = stringData;
+			this.updatedStrings.push(this.currentString);
+			if (this.listElements[this.currentString].className.search('modified') == -1)
+				this.listElements[this.currentString].className += ' modified';
+
+			document.getElementById('TranslationPanel-save').disabled = false;
+			document.getElementById('TranslationPanel-save').className = 'save';
+		}
+	},
+
+	commit: function () {
+		var data = {};
+		for (var i in this.updatedStrings) {
+			data[this.updatedStrings[i]] = this.strings[this.updatedStrings[i]];
+		}
+
+		var xmlHttp = window.ActiveXObject ? new ActiveXObject('Microsoft.XMLHTTP') : new XMLHttpRequest();
+		xmlHttp.onreadystatechange = function() {
+			if (this.readyState == 4) {
+				if (xmlHttp.status == 200) {
+					translationPanel.updatedStrings = [];
+					translationPanel.currentString = false;
+					translationPanel.setStatus('Sucessfuly saved.');
+					translationPanel.drawList();
+				} else {
+					translationPanel.setStatus('Unexpected error.');
+				}
+			}
+		}
+		xmlHttp.open("POST", <?php echo json_encode(Environment::getApplication()->getPresenter()->link('this')); ?>, true);
+		xmlHttp.setRequestHeader('X-Translation-Client', 'devel');
+		xmlHttp.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+		xmlHttp.send(JSON.stringify(data));
+	},
+
+	setStatus: function (text) {
+		if (text)
+			document.getElementById('TranslationPanel-status').innerHTML = text;
+		else
+			document.getElementById('TranslationPanel-status').innerHTML = '';
+	}
+};
+
+/* ]]> */
+</script>
+
+<div id="TranslationPanel">
+	<h1>Translations</h1>
+
+	<div class="nette-inner">
+		<div id="TranslationPanel-strings">
+		</div>
+
+		<div id="TranslationPanel-editor">
+		<?php
+		for ($i = 0; $i < $translator->getVariantsCount(); ++$i) {
+		?>
+			<div class="TranslationPanel-stringVariant">
+				<label for="TranslationPanel-stringVariant_<?php echo $i; ?>"><?php echo $i > 0 ? $i . '<sup>' . $this->ordinalSuffix($i) . '</sup> plural': 'Singular'; ?>:</label>
+				<textarea id="TranslationPanel-stringVariant_<?php echo $i; ?>" rows="4" cols="40"></textarea>
+			</div>
+		<?php
+		}
+		?>
+		<div id="TranslationPanel-tools">
+			<span id="TranslationPanel-status">Initializing&hellip;</span>
+			<input type="button" value="Save" class="save" id="TranslationPanel-save" />
+		</div>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+/* <![CDATA[ */
+translationPanel.init();
+/* ]]> */
+</script>
+
