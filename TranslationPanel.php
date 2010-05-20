@@ -38,11 +38,19 @@ class TranslationPanel implements IDebugPanel
 	/** @var IEditableTranslator */
 	protected $translator;
 
+	/** @var int Height of the editor */
+	protected $height = 300;
+
 	
 
-	public function __construct(IEditableTranslator $translator)
+	public function __construct(IEditableTranslator $translator, $height = NULL)
 	{
 		$this->translator = $translator;
+		if ($height !== NULL) {
+			if (!is_numeric($height))
+				throw new InvalidArgumentException('Panel height has to be a numeric value.');
+			$this->height = $height;
+		}
 
 		Environment::getApplication()->onStartup[] = callback($this, 'processRequest');
 	}
@@ -65,9 +73,19 @@ class TranslationPanel implements IDebugPanel
 	 */
 	public function getTab()
 	{
-		$tab = Html::el();
-		$tab->create('img')->src($this->getIconSrc('flag_blue.png'));
+		$tab = Html::el('span');
+		$image = $tab->create('img');
 		$tab->add('Translations');
+
+		$untranslatedCount = 0;
+		foreach ($this->translator->getStrings() as $value)
+			if (!$value)
+				++$untranslatedCount;
+		if ($untranslatedCount > 0)
+			$image->src($this->getIconSrc('flag_red.png'));
+		else
+			$image->src($this->getIconSrc('flag_blue.png'));
+
 		return (string) $tab;
 	}
 
