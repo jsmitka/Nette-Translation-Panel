@@ -238,7 +238,8 @@ var translationPanel = {
 					div.className += ' untranslated';
 
 				var a = document.createElement('a');
-				a.appendChild(document.createTextNode(i));
+				a.title = i;
+				a.innerHTML = (i.length <= 30 ? this.escape(i) : this.escape(i).substr(0, 30) + '&hellip;');
 				a.onclick = function () {
 					translationPanel.edit(this);
 				};
@@ -252,12 +253,12 @@ var translationPanel = {
 	},
 
 	edit: function (anchor) {
-		var string = anchor.textContent || anchor.innerText;
+		var string = anchor.title;
 
 		this.fillIn(this.strings[string]);
 		this.currentString = string;
 		document.getElementById('TranslationPanel-stringVariant_0').focus();
-		this.setStatus(string.length <= 40 ? string : string.substr(0, 40) + '&hellip;');
+		this.setStatus(string.length <= 50 ? this.escape(string) : this.escape(string).substr(0, 50) + '&hellip;');
 	},
 
 	fillIn: function (stringData) {
@@ -327,6 +328,14 @@ var translationPanel = {
 			document.getElementById('TranslationPanel-status').innerHTML = text;
 		else
 			document.getElementById('TranslationPanel-status').innerHTML = '';
+	},
+
+	escape: function (string) {
+		return string
+			.replace('&', '&amp;')
+			.replace('"', '&quot;')
+			.replace('<', '&lt;')
+			.replace('>', '&gt;');
 	}
 };
 
