@@ -49,7 +49,7 @@
 }
 
 #TranslationPanel-strings {
-	width: 30%;
+	width: <?php if ($this->layout == self::LAYOUT_VERTICAL) echo '40%'; else echo '30%'; ?>;
 	height: 100%;
 	overflow: auto;
 	float: left;
@@ -88,17 +88,19 @@
 }
 
 #TranslationPanel-editor {
-	width: 68%;
+	width: <?php if ($this->layout == self::LAYOUT_VERTICAL) echo '58%'; else echo '68%'; ?>;
 	height: 100%;
 	margin: -1px -1px -1px 0;
 	float: right;
 	position: relative;
 }
 
+<?php if ($this->layout == self::LAYOUT_HORIZONTAL) { ?>
 #TranslationPanel div.TranslationPanel-stringVariant {
 	width: 50%;
 	float: left;
 }
+<?php } ?>
 
 #TranslationPanel div.TranslationPanel-stringVariant sup {
 	font-size: 60%;

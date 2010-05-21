@@ -35,21 +35,36 @@
  */
 class TranslationPanel implements IDebugPanel
 {
+	/* Layout constants */
+	const LAYOUT_HORIZONTAL = 1;
+	const LAYOUT_VERTICAL = 2;
+
+
 	/** @var IEditableTranslator */
 	protected $translator;
+
+	/** @var int TranslationPanel layout */
+	protected $layout = self::LAYOUT_HORIZONTAL;
 
 	/** @var int Height of the editor */
 	protected $height = 300;
 
 	
 
-	public function __construct(IEditableTranslator $translator, $height = NULL)
+	public function __construct(IEditableTranslator $translator, $layout = NULL, $height = NULL)
 	{
 		$this->translator = $translator;
+
 		if ($height !== NULL) {
 			if (!is_numeric($height))
 				throw new InvalidArgumentException('Panel height has to be a numeric value.');
 			$this->height = $height;
+		}
+
+		if ($layout !== NULL) {
+			$this->layout = $layout;
+			if ($height === NULL)
+				$this->height = 500;
 		}
 
 		Environment::getApplication()->onStartup[] = callback($this, 'processRequest');
