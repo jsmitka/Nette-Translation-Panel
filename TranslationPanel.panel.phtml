@@ -120,7 +120,7 @@
 
 #TranslationPanel-tools {
 	position: absolute;
-	bottom: 0px;
+	bottom: -1px;
 	right: 0px;
 	width: 98%;
 	background-color: #EDEAE0;
@@ -193,8 +193,12 @@ var translationPanel = {
 	currentString: false,
 
 	listElements: [],
+	iconNormal: '',
+	iconNotification: <?php echo json_encode($this->getIconSrc('flag_red.png')); ?>,
 
 	init: function() {
+		this.iconNormal = document.getElementById('TranslationPanel-icon').src;
+
 		this.drawList();
 
 		for (var i = 0; i < this.variants; i++) {
@@ -223,12 +227,20 @@ var translationPanel = {
 		this.listElements = [];
 
 		var strings = [{}, {}];
+		var untranslated = 0;
 		for (var i in this.strings) {
 			if (this.strings[i])
 				strings[1][i] = this.strings[i];
-			else
+			else {
 				strings[0][i] = this.strings[i];
+				untranslated++;
+			}
 		}
+
+		if (untranslated)
+			document.getElementById('TranslationPanel-icon').src = this.iconNotification;
+		else
+			document.getElementById('TranslationPanel-icon').src = this.iconNormal;
 
 		for (var j in strings) {
 			for (var i in strings[j]) {
@@ -368,9 +380,4 @@ var translationPanel = {
 	</div>
 </div>
 
-<script type="text/javascript">
-/* <![CDATA[ */
-translationPanel.init();
-/* ]]> */
-</script>
 

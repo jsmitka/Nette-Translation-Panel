@@ -74,18 +74,9 @@ class TranslationPanel implements IDebugPanel
 	public function getTab()
 	{
 		$tab = Html::el('span');
-		$image = $tab->create('img');
+		$image = $tab->create('img')->src($this->getIconSrc('flag_blue.png'))->id('TranslationPanel-icon');
 		$tab->add('Translations');
-
-		$untranslatedCount = 0;
-		foreach ($this->translator->getStrings() as $value)
-			if (!$value)
-				++$untranslatedCount;
-		if ($untranslatedCount > 0)
-			$image->src($this->getIconSrc('flag_red.png'));
-		else
-			$image->src($this->getIconSrc('flag_blue.png'));
-
+		$tab->create('script')->type('text/javascript')->setHtml('translationPanel.init();');
 		return (string) $tab;
 	}
 
