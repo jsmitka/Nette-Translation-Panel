@@ -157,6 +157,21 @@
 	display: block;
 	padding: 4px 0;
 }
+
+#TranslationPanel-notification {
+	display: block;
+	position: absolute;
+	bottom: 0px;
+	font-size: 75%;
+	border: 1px solid #600;
+	background: #A00;
+	color: #FFF;
+	font-weight: bold;
+	border-radius: 3px;
+	-moz-border-radius: 3px;
+	-webkit-border-radius: 3px;
+	line-height: 100%;
+}
 </style>
 
 <script type="text/javascript">
@@ -195,10 +210,12 @@ var translationPanel = {
 	currentString: false,
 
 	listElements: [],
+	icon: null,
 	iconNormal: '',
 	iconNotification: <?php echo json_encode($this->getIconSrc('flag_red.png')); ?>,
 
 	init: function() {
+		this.icon = document.getElementById('TranslationPanel-icon');
 		this.iconNormal = document.getElementById('TranslationPanel-icon').src;
 
 		this.drawList();
@@ -239,10 +256,20 @@ var translationPanel = {
 			}
 		}
 
-		if (untranslated)
-			document.getElementById('TranslationPanel-icon').src = this.iconNotification;
-		else
-			document.getElementById('TranslationPanel-icon').src = this.iconNormal;
+		var notification = document.getElementById('TranslationPanel-notification');
+		if (notification)
+			notification.parentNode.removeChild(notification);
+
+		if (untranslated) {
+			this.icon.src = this.iconNotification;
+
+			notification = document.createElement('span');
+			notification.id = 'TranslationPanel-notification';
+			notification.textContent = untranslated;
+			this.icon.parentNode.style.position = 'relative';
+			this.icon.parentNode.appendChild(notification);
+		} else
+			this.icon.src = this.iconNormal;
 
 		for (var j in strings) {
 			for (var i in strings[j]) {

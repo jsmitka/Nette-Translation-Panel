@@ -25,10 +25,10 @@
  *
  */
 
-namespace Nette\Addons;
+/*namespace Nette\Addons;*/
 
-use Nette\Environment;
-use Nette\Web\Html;
+/*use Nette\Environment;*/
+/*use Nette\Web\Html;*/
 
 /**
  * Panel for Nette DebugBar, which enables you to translate strings
@@ -36,7 +36,7 @@ use Nette\Web\Html;
  *
  * @author Jan Smitka <jan@smitka.org>
  */
-class TranslationPanel implements \Nette\IDebugPanel
+class TranslationPanel implements /*\Nette\*/IDebugPanel
 {
 	/* Layout constants */
 	const LAYOUT_HORIZONTAL = 1;
@@ -60,7 +60,7 @@ class TranslationPanel implements \Nette\IDebugPanel
 
 		if ($height !== NULL) {
 			if (!is_numeric($height))
-				throw new \InvalidArgumentException('Panel height has to be a numeric value.');
+				throw new /*\*/InvalidArgumentException('Panel height has to be a numeric value.');
 			$this->height = $height;
 		}
 
@@ -108,7 +108,7 @@ class TranslationPanel implements \Nette\IDebugPanel
 		$translator = $this->translator;
 
 		ob_start();
-		require __DIR__ . '/TranslationPanel.panel.phtml';
+		require dirname(__FILE__) . '/TranslationPanel.panel.phtml';
 		return ob_get_clean();
 	}
 
@@ -139,7 +139,7 @@ class TranslationPanel implements \Nette\IDebugPanel
 	 */
 	protected function getIconSrc($icon)
 	{
-		return 'data:image/png;base64,' . base64_encode(file_get_contents(__DIR__ . '/icons/' . $icon));
+		return 'data:image/png;base64,' . base64_encode(file_get_contents(dirname(__FILE__) . '/icons/' . $icon));
 	}
 
 
