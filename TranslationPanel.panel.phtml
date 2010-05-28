@@ -275,12 +275,17 @@ var translationPanel = {
 			for (var i in strings[j]) {
 				var div = document.createElement('div');
 				div.className = 'TranslationPanel-string';
-				if (!this.strings[i])
+				var label;
+				if (!this.strings[i]) {
 					div.className += ' untranslated';
+					label = i;
+				} else {
+					label = (typeof(this.strings[i]) != 'object' || !(this.strings[i] instanceof Array)) ? this.strings[i] : this.strings[i][0];
+				}
 
 				var a = document.createElement('a');
 				a.title = i;
-				a.innerHTML = (i.length <= 30 ? this.escape(i) : this.escape(i).substr(0, 30) + '&hellip;');
+				a.innerHTML = (label.length <= 30 ? this.escape(label) : this.escape(label).substr(0, 30) + '&hellip;');
 				a.onclick = function () {
 					translationPanel.edit(this);
 				};
