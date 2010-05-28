@@ -203,7 +203,7 @@ JSON.stringify = JSON.stringify || function (obj) {
 /* <![CDATA[ */
 
 var translationPanel = {
-	strings: <?php echo json_encode($translator->getStrings()); ?>,
+	strings: <?php echo json_encode($strings); ?>,
 	variants: <?php echo json_encode($translator->getVariantsCount()); ?>,
 
 	updatedStrings: [],

@@ -106,6 +106,23 @@ class TranslationPanel implements /*\Nette\*/IDebugPanel
 	public function getPanel()
 	{
 		$translator = $this->translator;
+		$strings = $this->translator->getStrings();
+
+		if (Environment::getSession()->isStarted()) {
+			$session = Environment::getSession('Nette.Addons.TranslationPanel');
+			$untranslatedStack = isset($session['stack']) ? $session['stack'] : array();
+			foreach ($strings as $string => $data) {
+				if (!$data) {
+					$untranslatedStack[$string] = FALSE;
+				}
+			}
+			$session['stack'] = $untranslatedStack;
+
+			foreach ($untranslatedStack as $string => $value) {
+				if (!isset($strings[$string]))
+					$strings[$string] = FALSE;
+			}
+		}
 
 		ob_start();
 		require dirname(__FILE__) . '/TranslationPanel.panel.phtml';
@@ -122,10 +139,21 @@ class TranslationPanel implements /*\Nette\*/IDebugPanel
 		if ($request->isPost() && $request->isAjax() && $request->getHeader('X-Translation-Client')) {
 			$data = json_decode(file_get_contents('php://input'));
 			if ($data) {
+				if (Environment::getSession()->isStarted()) {
+					$session = Environment::getSession('Nette.Addons.TranslationPanel');
+					$stack = isset($session['stack']) ? $session['stack'] : array();
+				} else
+					$session = FALSE;
+
 				foreach ($data as $string => $value) {
 					$this->translator->setTranslation($string, $value);
+					if ($session && isset($stack[$string]))
+						unset($stack[$string]);
 				}
 				$this->translator->save();
+
+				if ($session)
+					$session['stack'] = $stack;
 			}
 		}
 	}
