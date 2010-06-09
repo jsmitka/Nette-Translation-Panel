@@ -135,15 +135,20 @@ class TranslationPanel implements /*\Nette\*/IDebugPanel
 	 */
 	public function processRequest()
 	{
+		// Try starting the session
+		try {
+			$session = Environment::getSession('Nette.Addons.TranslationPanel');
+		} catch (InvalidStateException $e) {
+			$session = FALSE;
+		}
+
 		$request = Environment::getHttpRequest();
 		if ($request->isPost() && $request->isAjax() && $request->getHeader('X-Translation-Client')) {
 			$data = json_decode(file_get_contents('php://input'));
 			if ($data) {
-				if (Environment::getSession()->isStarted()) {
-					$session = Environment::getSession('Nette.Addons.TranslationPanel');
+				if ($session) {
 					$stack = isset($session['stack']) ? $session['stack'] : array();
-				} else
-					$session = FALSE;
+				}
 
 				foreach ($data as $string => $value) {
 					$this->translator->setTranslation($string, $value);
