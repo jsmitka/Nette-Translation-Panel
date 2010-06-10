@@ -371,7 +371,7 @@ var translationPanel = {
 		if (typeof(stringData) != 'object' || !(stringData instanceof Array))
 			stringData = [stringData];
 		for (var i in stringData) {
-			if (stringData[i].match(filter))
+			if (typeof(stringData[i]) == 'string' && stringData[i].match(filter))
 				return true;
 		}
 
