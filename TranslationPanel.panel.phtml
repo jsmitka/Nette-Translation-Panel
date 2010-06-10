@@ -48,13 +48,37 @@
 	padding: 1px;
 }
 
-#TranslationPanel-strings {
+#TranslationPanel-sidebar {
 	width: <?php if ($this->layout == self::LAYOUT_VERTICAL) echo '40%'; else echo '30%'; ?>;
 	height: 100%;
-	overflow: auto;
+	overflow: hidden;
 	float: left;
-	border: 1px solid #AAA;
 	margin: -1px 0 -1px -1px;
+}
+
+#TranslationPanel-strings {
+	height: <?php echo ($this->height - 30) . 'px'; ?>;
+	overflow: auto;
+	border: 1px solid #AAA;
+}
+
+#TranslationPanel-filter {
+	padding: 3px 3px 3px 21px;
+	border: 1px solid #AAA;
+	margin-bottom: 2px;
+	background: #FFF url("<?php echo $this->getIconSrc('magnifier.png'); ?>") no-repeat 3px 50%;
+}
+
+#TranslationPanel-filterBox {
+	width: 80%;
+}
+
+#TranslationPanel-filterReset {
+	float: right;
+	width: 16px;
+	height: 16px;
+	margin: 1px 0;
+	background: transparent url("<?php echo $this->getIconSrc('cancel.png'); ?>") no-repeat 50% 50%;
 }
 
 #TranslationPanel div.TranslationPanel-string {
@@ -208,6 +232,7 @@ var translationPanel = {
 
 	updatedStrings: [],
 	currentString: false,
+	filter: '',
 
 	listElements: [],
 	icon: null,
@@ -237,6 +262,21 @@ var translationPanel = {
 			translationPanel.commit();
 		};
 
+		var filterBox = document.getElementById('TranslationPanel-filterBox');
+		var filterReset = document.getElementById('TranslationPanel-filterReset');
+		filterReset.style.visibility = 'hidden';
+		var onChange = function () {
+			translationPanel.filter = filterBox.value;
+			filterReset.style.visibility = (translationPanel.filter ? 'visible' : 'hidden');
+			translationPanel.drawList();
+		};
+		filterBox.onkeyup = filterBox.onchange = onChange;
+		filterReset.onclick = function () {
+			translationPanel.filter = filterBox.value = '';
+			filterReset.style.visibility = 'hidden';
+			translationPanel.drawList();
+		};
+
 		translationPanel.setStatus();
 	},
 
@@ -248,7 +288,17 @@ var translationPanel = {
 		var strings = [{}, {}];
 		var untranslated = 0;
 		for (var i in this.strings) {
-			if (this.strings[i])
+			var translated = Boolean(this.strings[i]);
+			if (translated && (typeof(this.strings[i]) == 'object' && this.strings[i] instanceof Array) && this.strings[i].length > 1) {
+				for (var plural = 0; plural < this.variants; plural++) {
+					if (!this.strings[i][plural]) {
+						translated = false;
+						break;
+					}
+				}
+			}
+
+			if (translated)
 				strings[1][i] = this.strings[i];
 			else {
 				strings[0][i] = this.strings[i];
@@ -271,16 +321,27 @@ var translationPanel = {
 		} else
 			this.icon.src = this.iconNormal;
 
-		for (var j in strings) {
-			for (var i in strings[j]) {
+		for (var translated in strings) {
+			for (var i in strings[translated]) {
+				if (!this.matchesFilter(i, this.strings[i]))
+					continue;
+
 				var div = document.createElement('div');
 				div.className = 'TranslationPanel-string';
 				var label;
-				if (!this.strings[i]) {
+				var stringData = this.strings[i];
+
+				if (translated == 0) {
 					div.className += ' untranslated';
+				}
+
+				if (!stringData) {
 					label = i;
 				} else {
-					label = (typeof(this.strings[i]) != 'object' || !(this.strings[i] instanceof Array)) ? this.strings[i] : this.strings[i][0];
+					if (typeof(stringData) != 'object' || !(stringData instanceof Array))
+						stringData = [stringData];
+					
+					label = stringData[0];
 				}
 
 				var a = document.createElement('a');
@@ -296,6 +357,25 @@ var translationPanel = {
 				this.listElements[i] = div;
 			}
 		}
+	},
+
+	matchesFilter: function (string, stringData) {
+		if (!this.filter)
+			return true;
+
+		var filter = new RegExp(this.filter, 'i');
+
+		if (string.match(filter))
+			return true;
+
+		if (typeof(stringData) != 'object' || !(stringData instanceof Array))
+			stringData = [stringData];
+		for (var i in stringData) {
+			if (stringData[i].match(filter))
+				return true;
+		}
+
+		return false;
 	},
 
 	edit: function (anchor) {
@@ -392,7 +472,13 @@ var translationPanel = {
 	<h1>Translations</h1>
 
 	<div class="nette-inner">
-		<div id="TranslationPanel-strings">
+		<div id="TranslationPanel-sidebar">
+			<div id="TranslationPanel-filter">
+				<input type="text" class="text" id="TranslationPanel-filterBox" />
+				<div id="TranslationPanel-filterReset"></div>
+			</div>
+			<div id="TranslationPanel-strings">
+			</div>
 		</div>
 
 		<div id="TranslationPanel-editor">
