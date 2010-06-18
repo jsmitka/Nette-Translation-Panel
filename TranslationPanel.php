@@ -70,7 +70,7 @@ class TranslationPanel implements /*\Nette\*/IDebugPanel
 				$this->height = 500;
 		}
 
-		Environment::getApplication()->onStartup[] = callback($this, 'processRequest');
+		Environment::getApplication()->onRequest[] = callback($this, 'processRequest');
 	}
 
 	
